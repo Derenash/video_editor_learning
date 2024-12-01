@@ -12,8 +12,9 @@ export class UniformManager {
   }
 
   public setUniforms(shaderName: string, programInfo: WebGLProgramInfo): void {
-    const shader = ShaderCollection.getShader(shaderName);
-    const config = this.shaderManager.getShaderConfig(shaderName) || {};
+    const config = this.shaderManager.getShaderConfig(shaderName);
+    if (!config) return;
+    const shader = ShaderCollection.getShader(config.shaderName);
 
     Object.entries(shader.uniforms).forEach(([name, val]) => {
       const uniform = val as UniformConfig;

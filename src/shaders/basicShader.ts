@@ -27,13 +27,13 @@ export const basic: Shader = {
       return mix(vec3(gray), color, saturation);
     }
     
-    vec3 applySepiaEffect(vec3 color, float intensity, float time) {
+    vec3 applySepiaEffect(vec3 color, float intensity) {
       vec3 sepia = vec3(
         dot(color, vec3(0.393, 0.769, 0.189)),
         dot(color, vec3(0.349, 0.686, 0.168)),
         dot(color, vec3(0.272, 0.534, 0.131))
       );
-      return mix(color, sepia, intensity * sin(time));
+      return mix(color, sepia, intensity);
     }
     
     void main() {
@@ -43,7 +43,7 @@ export const basic: Shader = {
       color = adjustBrightness(color, u_brightness);
       color = adjustContrast(color, u_contrast);
       color = adjustSaturation(color, u_saturation);
-      color = applySepiaEffect(color, u_sepia, u_time);
+      color = applySepiaEffect(color, u_sepia);
       
       gl_FragColor = vec4(color, texColor.a);
     }

@@ -23,8 +23,8 @@ const fragmentShader = `
     // Calculate the elapsed time since the effect started
     float elapsedTime = u_time - u_startTime;
 
-    // Define the burst duration (2 secsonds)
-    float burstDuration = 0.1;
+    // Define the burst duration (2 seconds)
+    float burstDuration = 5.0;
 
     // Normalize the time (0.0 to 1.0 during the burst)
     float normalizedTime = clamp(elapsedTime / burstDuration, 0.0, 1.0);

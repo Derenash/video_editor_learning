@@ -7,6 +7,7 @@ export interface WebGLProgramInfo {
   uniformLocations: Record<string, WebGLUniformLocation>;
 }
 export interface ShaderConfig {
+  shaderName: keyof ShaderConfigMap;
   brightness?: number;  // 0.0 to 2.0
   contrast?: number;    // 0.0 to 2.0
   saturation?: number; // 0.0 to 2.0
@@ -37,9 +38,18 @@ export interface Shader {
   };
 }
 
+export interface Effect<T extends keyof ShaderConfigMap> {
+  identifier: string;
+  shaderName: T;
+  config?: ShaderConfigMap[T];
+  startTime: number;
+  duration?: number;
+}
+
 // Add type safety for shader configurations
 export type ShaderConfigMap = {
   basic: { brightness: number; contrast: number; saturation: number; sepia: number };
   shine: { center: number[]; radius: number; intensity: number };
   // Add more as needed
 };
+

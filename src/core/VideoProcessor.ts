@@ -1,10 +1,11 @@
 import { WebGLContext } from './WebGLContext.js';
 import { VideoRecorder } from './MediaRecorder.js';
-import { ShaderConfigMap } from '../types';
+import { Effect, ShaderConfigMap } from '../types';
 import { ShaderManager } from './ShaderManager.js';
 import { FramebufferManager } from './FramebufferManager.js';
 import { Renderer } from './Renderer.js';
 import { UniformManager } from './UniformManager.js';
+import { EffectManager } from './EffectManager.js';
 
 export class VideoProcessor {
   private canvas: HTMLCanvasElement;
@@ -23,14 +24,17 @@ export class VideoProcessor {
   private framebufferManager: FramebufferManager;
   private renderer!: Renderer;
 
+  private effectManager: EffectManager;
+
   constructor() {
     this.canvas = this.setupCanvas();
     this.glContext = new WebGLContext(this.canvas);
     this.gl = this.glContext.getContext();
     this.videoRecorder = new VideoRecorder(this.canvas);
-    this.shaderManager = new ShaderManager(this.glContext);
     this.framebufferManager = new FramebufferManager(this.gl, this.canvas);
+    this.shaderManager = new ShaderManager(this.glContext, this.framebufferManager);
     this.uniformManager = new UniformManager(this.gl, this.shaderManager);
+    this.effectManager = new EffectManager(this.shaderManager);
 
     this.initialize();
   }
@@ -39,8 +43,8 @@ export class VideoProcessor {
     this.setupBuffers();
     this.setupTexture();
     this.setupVideo();
-    this.setupRecordingButtons();
     this.addEventListeners();
+    this.setupInitialEffects();
 
     // Setup framebuffers after shaders are initialized
     const shaderNames = this.shaderManager.getShaderNames();
@@ -57,14 +61,20 @@ export class VideoProcessor {
     );
   }
 
-  public setShader<T extends keyof ShaderConfigMap>(
-    shaderName: T,
-    config?: ShaderConfigMap[T]
+  private setupInitialEffects(): void {
+    const initialEffect: Effect<'basic'> = {
+      identifier: 'initial-shader',
+      shaderName: 'basic',
+      config: { brightness: 1.0, contrast: 1.0, saturation: 1.0, sepia: 0 },
+      startTime: 0,
+    }
+    this.addEffect(initialEffect);
+  }
+
+  public addEffect<T extends keyof ShaderConfigMap>(
+    effect: Effect<T>
   ): void {
-    this.shaderManager.setShader(shaderName, config);
-    // Setup framebuffers after shaders are initialized
-    const shaderNames = this.shaderManager.getShaderNames();
-    this.framebufferManager.setupFramebuffers(shaderNames);
+    this.effectManager.addEffect(effect)
   }
 
   // ##################################
@@ -108,43 +118,28 @@ export class VideoProcessor {
   private setupVideo(): void {
     this.video = document.createElement('video');
     this.video.autoplay = true;
-    this.video.loop = true;
+    // this.video.loop = true;
     this.video.muted = true;
     this.video.src = 'video.mp4';
     this.video.crossOrigin = 'anonymous';
     this.video.play();
-  }
 
-  private setupRecordingButtons(): void {
-    this.createButton('Start Recording', '10px', '10px',
-      () => this.videoRecorder.startRecording());
-    this.createButton('Stop Recording', '10px', '150px',
-      () => this.videoRecorder.stopRecording());
-  }
-
-  private createButton(text: string, top: string, left: string, onClick: () => void): void {
-    const button = document.createElement('button');
-    button.textContent = text;
-    button.style.position = 'absolute';
-    button.style.top = top;
-    button.style.left = left;
-    button.addEventListener('click', onClick);
-    document.body.appendChild(button);
   }
 
   private render = (): void => {
     if (this.video.readyState >= this.video.HAVE_CURRENT_DATA) {
       this.updateTexture();
       this.renderer.draw();
-      this.updateTime()
+      this.updateFrame()
     }
     requestAnimationFrame(this.render);
   };
 
-  private updateTime(): void {
+  private updateFrame(): void {
     const videoTime = this.video.currentTime;
 
     this.uniformManager.updateUniformsTime(videoTime);
+    this.effectManager.updateEffects(videoTime)
   }
 
   private updateTexture(): void {
@@ -161,7 +156,13 @@ export class VideoProcessor {
 
   private addEventListeners(): void {
     // window.addEventListener('resize', () => this.resizeCanvas());
-    this.video.addEventListener('playing', () => this.render());
+    this.video.addEventListener('playing', () => {
+      this.render();
+      this.videoRecorder.startRecording()
+    })
+    this.video.addEventListener('ended', () => {
+      this.videoRecorder.stopRecording()
+    });
     this.resizeCanvas();
   }
 

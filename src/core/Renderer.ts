@@ -45,6 +45,7 @@ export class Renderer {
       this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, isLastShader ? null : framebuffer!);
       this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
+      console.log
       const programInfo = this.shaderManager.getProgramInfo(shaderName)!;
       this.gl.useProgram(programInfo.program);
 

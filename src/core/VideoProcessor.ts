@@ -120,7 +120,7 @@ export class VideoProcessor {
     this.video.autoplay = true;
     // this.video.loop = true;
     this.video.muted = true;
-    this.video.src = 'video.mp4';
+    this.video.src = 'wave.mp4';
     this.video.crossOrigin = 'anonymous';
     this.video.play();
 
